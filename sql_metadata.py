@@ -22,7 +22,9 @@ class SQLMetadata:
             not i.startswith('@') and 
             not i.startswith('#') and 
             not i.startswith('sys.') and 
-            not i.lower() == 'sysobjects', table_names))
+            not i.lower() == 'sysobjects' and
+            not i.lower().startswith('cte') and
+            not i.lower().endswith('cte'), table_names))
         table_names.sort()
         return table_names
 

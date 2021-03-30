@@ -19,5 +19,7 @@ class MetaExporter:
         sql_paths = self.__get_sql_paths()
         metas = [SQLMetadata(path).as_json() for path in sql_paths]
         df = pd.DataFrame(metas)
+        df.sort_values(by='name', inplace=True)
+        df.reset_index(drop=True, inplace=True)
         df.index.rename('idx', inplace=True)
         df.to_csv(path)
