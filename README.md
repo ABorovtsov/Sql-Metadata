@@ -7,7 +7,7 @@ The tool grabs external files with sql code inside and collects metadata such as
 ```python
 from meta_export import MetaExporter
 
-root_path = '.' # sql scripts root directory
-include_scripts = ['one.sql', 'two.sql'] # optional filter
-MetaExporter(root_path, include_scripts).to_csv('result.csv')
+path = '.' # a directory with sql scripts
+include_scripts = ['one.sql', 'two.sql'] # an optional filter
+MetaExporter(path, include_scripts).to_csv('result.csv')
 ```
