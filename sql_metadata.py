@@ -8,13 +8,13 @@ class SQLMetadata:
 
         lines = []
         with open(sql_path, 'r') as file:
-            lines = [line for line in file.readlines() if not re.match(r'^\s*--', line)] # remove the commented lines
+            lines = [line for line in file.readlines() if not re.match(r'^\s*(--|/\*)', line)] # remove the commented lines
         
         self.sql = ' '.join(lines).replace('\n', ' ').replace('\r', ' ')
         self.name = os.path.basename(sql_path).replace('.sql', '')
 
     def __get_tables(self):
-        pattern = r"(from\s+|join\s+|delete\s+from\s+|insert\s+into\s+|update\s+|merge\s+into\s+)(\S+)"
+        pattern = r"(^from\s+|\s+from\s+|^join\s+|\s+join\s+|delete\s+from\s+|insert\s+into\s+|^update\s+|\s+update\s+|merge\s+into\s+)([^\s\+']+)"
         table_names = re.findall(pattern, self.sql, re.IGNORECASE)
         table_names = set([self.__clean_up(table_name[1]).lower() for table_name in table_names])
         table_names = list(filter(lambda i: 
