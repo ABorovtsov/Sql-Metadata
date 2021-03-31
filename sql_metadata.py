@@ -22,13 +22,14 @@ class SQLMetadata:
                   r"delete\s+from\s+|" + \
                   r"insert\s+into\s+|" + \
                   r"\s+update\s+top\s*\(\d+\)\s+|^update\s+|\s+update\s+|" + \
-                  r"merge\s+into\s+)([\s\+']+)(\S+)"
+                  r"merge\s+into\s+)([\s\+']*)(\S+)"
 
         table_names = re.findall(pattern, self.sql, re.IGNORECASE)
-        table_names = set([self.__clean_up(table_name[2]).lower() for table_name in table_names])
+        table_names = set([self.__clean_up(table_name[1] + table_name[2]).lower() for table_name in table_names])
         table_names = list(filter(lambda i: 
             not i.startswith('(') and 
             not (i.startswith('@') and 'table' in self.variables.get(i, '').lower()) and 
+            not (i.startswith('@') and self.variables.get(i, '').lower().endswith('type')) and 
             not (i.startswith('@') and i not in self.variables) and 
             not i.startswith('#') and 
             not i.startswith('sys.') and 
@@ -82,7 +83,10 @@ class SQLMetadata:
             .replace('[', '') \
             .replace(']', '') \
             .replace('dbo.', '') \
-            .replace(';', '')
+            .replace(';', '') \
+            .replace("'", '') \
+            .replace("+", '') \
+            .strip()
 
     def __str__(self):
         return json.dumps(self.as_json(), indent=2)
