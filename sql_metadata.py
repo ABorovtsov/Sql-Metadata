@@ -4,7 +4,7 @@ import os
 
 
 class SQLMetadata:
-    def __init__(self, sql_path, table_aliases = None):
+    def __init__(self, sql_path, table_aliases = None, overrides = {}):
         # todo: validate SP exists and not empty
         self.table_aliases = table_aliases
         lines = []
@@ -15,6 +15,7 @@ class SQLMetadata:
         self.variables = {variable[0]:variable[1] for variable in variables}
         self.sql = ' '.join(lines).replace('\n', ' ').replace('\r', ' ')
         self.name = os.path.basename(sql_path).replace('.sql', '')
+        self.overrides = overrides
 
     def __get_tables(self):
         pattern = r"(^from\s+|\s+from\s+|" + \
@@ -37,7 +38,8 @@ class SQLMetadata:
             not i.lower().startswith('cte') and
             not i.lower().endswith('cte') and
             not i.lower().endswith('cursor') and
-            i.lower() != 'of', table_names))
+            i.lower() != 'of' and
+            len(i) > 0, table_names))
 
         if self.table_aliases:
             for alias in self.table_aliases:
@@ -71,22 +73,17 @@ class SQLMetadata:
         return \
         {
             'name': self.name,
-            'has_app_lock': self.has_app_lock(),
-            'has_tx': self.has_tx(), 
-            'has_dynamic_sql': self.has_dynamic_sql(),
-            'tables': self.tables,
-            'sps': self.sps,
+            'has_app_lock': self.overrides.get('has_app_lock', self.has_app_lock()), # todo: use overrides inside each class member
+            'has_tx': self.overrides.get('has_tx', self.has_tx()),
+            'has_dynamic_sql': self.overrides.get('has_dynamic_sql', self.has_dynamic_sql()),
+            'tables': self.overrides.get('tables', self.tables),
+            'sps': self.overrides.get('sps', self.sps)
         }
 
     def __clean_up(self, line):
-        return line \
-            .replace('[', '') \
-            .replace(']', '') \
-            .replace('dbo.', '') \
-            .replace(';', '') \
-            .replace("'", '') \
-            .replace("+", '') \
-            .strip()
+        for r in ['[', ']', '(', ')', 'dbo.', ';', "'", "+"]:
+            line = line.replace(r, '')
+        return line.strip()
 
     def __str__(self):
         return json.dumps(self.as_json(), indent=2)
