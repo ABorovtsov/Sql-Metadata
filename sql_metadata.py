@@ -28,18 +28,15 @@ class SQLMetadata:
         table_names = re.findall(pattern, self.sql, re.IGNORECASE)
         table_names = set([self.__clean_up(table_name[1] + table_name[2]).lower() for table_name in table_names])
         table_names = list(filter(lambda i: 
-            not i.startswith('(') and 
+            len(i) > 0 and 
+            i[0] not in ['(', '#'] and 
             not (i.startswith('@') and 'table' in self.variables.get(i, '').lower()) and 
             not (i.startswith('@') and self.variables.get(i, '').lower().endswith('type')) and 
             not (i.startswith('@') and i not in self.variables) and 
-            not i.startswith('#') and 
             not i.startswith('sys.') and 
-            i.lower() != 'sysobjects' and
-            not i.lower().startswith('cte') and
-            not i.lower().endswith('cte') and
-            not i.lower().endswith('cursor') and
-            i.lower() != 'of' and
-            len(i) > 0, table_names))
+            i.lower() not in ['sysobjects', 'case', 'of'] and
+            not (i.lower().startswith('cte') or i.lower().endswith('cte')) and
+            not i.lower().endswith('cursor'), table_names))
 
         if self.table_aliases:
             for alias in self.table_aliases:
@@ -67,7 +64,7 @@ class SQLMetadata:
 
     def has_dynamic_sql(self):
         sps = self.__get_sps()
-        return 'sp_executesql' in sps
+        return 'sp_executesql' in sps or any([sp for sp in sps if sp.startswith('@')])
 
     def as_json(self):
         return \
