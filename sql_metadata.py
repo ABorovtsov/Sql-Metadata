@@ -17,6 +17,18 @@ class SQLMetadata:
         self.name = os.path.basename(sql_path).replace('.sql', '')
         self.overrides = overrides
 
+    def as_json(self):
+        return \
+        {
+            'name': self.name,
+            'has_app_lock': self.overrides.get('has_app_lock', self.__has_app_lock()), # todo: use overrides inside each class member
+            'has_tx': self.overrides.get('has_tx', self.__has_tx()),
+            'has_dynamic_sql': self.overrides.get('has_dynamic_sql', self.__has_dynamic_sql()),
+            'type': self.__get_type(),
+            'tables': self.overrides.get('tables', self.__get_tables()),
+            'sps': self.overrides.get('sps', self.__get_sps())
+        }
+
     def __get_tables(self):
         pattern = r"(^from\s+|\s+from\s+|" + \
                   r"^join\s+|\s+join\s+|" + \
@@ -34,7 +46,7 @@ class SQLMetadata:
             not (i.startswith('@') and self.variables.get(i, '').lower().endswith('type')) and 
             not (i.startswith('@') and i not in self.variables) and 
             not i.startswith('sys.') and 
-            i.lower() not in ['sysobjects', 'case', 'of'] and
+            i.lower() not in ['sysobjects', 'case', 'of', 'select'] and
             not (i.lower().startswith('cte') or i.lower().endswith('cte')) and
             not i.lower().endswith('cursor'), table_names))
 
@@ -55,27 +67,20 @@ class SQLMetadata:
         sp_names.sort()
         return sp_names
 
-    def has_app_lock(self):
+    def __has_app_lock(self):
         sps = self.__get_sps()
         return 'sp_getapplock' in sps
 
-    def has_tx(self):
+    def __has_tx(self):
         return re.search(r'commit\s+tran', self.sql, re.IGNORECASE) != None
 
-    def has_dynamic_sql(self):
+    def __has_dynamic_sql(self):
         sps = self.__get_sps()
         return 'sp_executesql' in sps or any([sp for sp in sps if sp.startswith('@')])
 
-    def as_json(self):
-        return \
-        {
-            'name': self.name,
-            'has_app_lock': self.overrides.get('has_app_lock', self.has_app_lock()), # todo: use overrides inside each class member
-            'has_tx': self.overrides.get('has_tx', self.has_tx()),
-            'has_dynamic_sql': self.overrides.get('has_dynamic_sql', self.has_dynamic_sql()),
-            'tables': self.overrides.get('tables', self.tables),
-            'sps': self.overrides.get('sps', self.sps)
-        }
+    def __get_type(self):
+        contains_sp = re.search(r'(create or alter procedure|create procedure)', self.sql, re.IGNORECASE)
+        return ('' if contains_sp is None else 'SP')
 
     def __clean_up(self, line):
         for r in ['[', ']', '(', ')', 'dbo.', ';', "'", "+"]:
@@ -85,5 +90,3 @@ class SQLMetadata:
     def __str__(self):
         return json.dumps(self.as_json(), indent=2)
 
-    tables = property(__get_tables)
-    sps = property(__get_sps)
