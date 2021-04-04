@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+
 
 
 class MetaExporter:
@@ -18,6 +20,9 @@ class MetaExporter:
         df = df.append(self.get_dependencies(df))
         df.reset_index(drop=True, inplace=True)
         df.index.rename('idx', inplace=True)
+        df = df.replace({np.nan: None})
+
+        df['refs'] = df.apply(lambda v: self.__indexer(df, v), axis=1)
         df.to_csv(path)
 
     def get_dependencies(self, df):
@@ -43,3 +48,18 @@ class MetaExporter:
         dependencies = list(set(dependencies))
         dependencies.sort()
         return dependencies
+
+    def __indexer(self, resources_df, row):
+        tables_to_index = row.tables
+        sps_to_index = row.sps
+        dependencies_to_index = []
+        if tables_to_index:
+            dependencies_to_index.extend(tables_to_index)
+        if sps_to_index:
+            dependencies_to_index.extend(sps_to_index)
+            
+        if not dependencies_to_index:
+            return None
+
+        i = [str(i) for i in list(resources_df.loc[resources_df.name.isin(dependencies_to_index)].index)]
+        return ','.join(i)
