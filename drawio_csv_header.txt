@@ -1,0 +1,15 @@
+## SQL-Metadata
+# label: <a href="%stash_link%">#%idx% %name%</a>
+## style: label;shape=%shape%;html=1;fillColor=%fill%;strokeColor=%stroke%;
+# style: shape=%shape%;html=1;fillColor=%fill%;strokeColor=%stroke%
+# namespace: csvimport-
+# connect: {"from":"refs", "to":"idx", "invert":false, "style":"curved=0;endArrow=blockThin;endFill=1;"}
+# width: auto
+# height: auto
+# padding: 15
+# ignore: shape,fill,stroke,refs
+# nodespacing: 40
+# levelspacing: 100
+# edgespacing: 40
+# layout: auto
+## CSV starts under this line

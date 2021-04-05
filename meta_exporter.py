@@ -17,27 +17,46 @@ class MetaExporter:
 
     def to_drawio(self, metas, path):
         df = self.to_df(metas)
-        df = df.append(self.get_dependencies(df))
+        dependencies = self.get_dependencies(df, unique=False)
+        df = df.append(self.get_dependencies(df, unique=True))
         df.reset_index(drop=True, inplace=True)
         df.index.rename('idx', inplace=True)
         df = df.replace({np.nan: None})
 
         df['refs'] = df.apply(lambda v: self.__indexer(df, v), axis=1)
-        df.to_csv(path)
+        df['reused'] = df.name.apply(lambda v: v in list(dependencies.name))
+        df['shape'] = df.type.apply(lambda t: 'mxgraph.basic.rect' if 'SP' in t else 'cylinder3') 
+        df['fill'] = df.apply(lambda row: self.__get_fill_color(row['type'], row['reused']), axis=1)
+        df['stroke'] = '#6C8EBF'
+        df['stash_link'] = 'http://localhost'
+        
+        df[['name','type','refs','reused','has_app_lock','has_tx','has_dynamic_sql',
+            'shape','fill','stroke','stash_link']].to_csv(path)
 
-    def get_dependencies(self, df):
+    def get_dependencies(self, df, unique = True):
         dependencies_df = pd.DataFrame(columns=df.columns)
         dependencies_df['name']=pd.Series(self.__get_unique(df.tables))
         dependencies_df.type = 'Table'
 
         dependencies_sps = self.__get_unique(df.sps)
-        dependencies_sps = list(filter(lambda x: x not in list(df.name) and x not in ['sp_executesql', 'sp_getapplock'], dependencies_sps))
+
+        if unique:
+            dependencies_sps = list(filter(lambda x: x not in list(df.name) and x not in ['sp_executesql', 'sp_getapplock'], dependencies_sps))
+
         dependencies_sps_df = pd.DataFrame(columns=df.columns)
         dependencies_sps_df['name']=pd.Series(dependencies_sps)
         dependencies_sps_df.type = 'SP'
 
         dependencies_df = dependencies_df.append(dependencies_sps_df)
         return dependencies_df
+
+    def __get_fill_color(self, resource_type, reused):
+        if 'SP' in resource_type:
+            if reused:
+                return '#A0C5FE' # reusable SP
+            return '#DAE8FC' # SP
+
+        return '#6AA9FF' # tables, etc
 
     def __get_unique(self, list_series):
         dependencies = []
