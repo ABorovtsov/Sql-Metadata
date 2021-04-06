@@ -5,7 +5,7 @@ import pandas as pd
 
 class MetaExporter:
     ORDERED_COLUMNS = ['name','type','refs','reused','has_app_lock','has_tx','has_dynamic_sql',
-            'shape','fill','stroke','stash_link']
+            'shape','fill','stroke','link']
 
     def to_df(self, metas):
         df = pd.DataFrame([meta.as_json() for meta in metas])
@@ -31,7 +31,6 @@ class MetaExporter:
         df['shape'] = df.type.apply(lambda t: 'mxgraph.basic.rect' if 'SP' in t else 'cylinder3') 
         df['fill'] = df.apply(lambda row: self.__get_fill_color(row['type'], row['reused']), axis=1)
         df['stroke'] = '#6C8EBF'
-        df['stash_link'] = 'http://localhost'
         df = df[MetaExporter.ORDERED_COLUMNS]
 
         df.to_csv(path)

@@ -1,5 +1,5 @@
 ## SQL-Metadata
-# label: <a href="%stash_link%">#%idx% %name%</a>
+# label: <a href="%link%">#%idx% %name%</a>
 ## style: label;shape=%shape%;html=1;fillColor=%fill%;strokeColor=%stroke%;
 # style: shape=%shape%;html=1;fillColor=%fill%;strokeColor=%stroke%
 # namespace: csvimport-

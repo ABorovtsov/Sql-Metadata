@@ -4,7 +4,7 @@ import os
 
 
 class SQLMetadata:
-    def __init__(self, sql_path, table_aliases = None, overrides = {}):
+    def __init__(self, sql_path, table_aliases = None, overrides = {}, link_generator = None):
         # todo: validate SP exists and not empty
         self.table_aliases = table_aliases
         lines = []
@@ -16,6 +16,8 @@ class SQLMetadata:
         self.sql = ' '.join(lines).replace('\n', ' ').replace('\r', ' ')
         self.name = os.path.basename(sql_path).replace('.sql', '')
         self.overrides = overrides
+        self.link_generator = link_generator if link_generator else lambda path: 'http://localhost'
+        self.sql_path = sql_path
 
     def as_json(self):
         return \
@@ -26,7 +28,8 @@ class SQLMetadata:
             'has_dynamic_sql': self.overrides.get('has_dynamic_sql', self.__has_dynamic_sql()),
             'type': self.__get_type(),
             'tables': self.overrides.get('tables', self.__get_tables()),
-            'sps': self.overrides.get('sps', self.__get_sps())
+            'sps': self.overrides.get('sps', self.__get_sps()),
+            'link': self.overrides.get('link', self.link_generator(self.sql_path))
         }
 
     def __get_tables(self):
