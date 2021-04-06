@@ -1,15 +1,23 @@
 ## SQL-Metadata
 # label: <a href="%link%">#%idx% %name%</a>
 ## style: label;shape=%shape%;html=1;fillColor=%fill%;strokeColor=%stroke%;
-# style: shape=%shape%;html=1;fillColor=%fill%;strokeColor=%stroke%
+## style: shape=%shape%;html=1;rounded=1;fillColor=%fill%;strokeColor=%stroke%
 # namespace: csvimport-
 # connect: {"from":"refs", "to":"idx", "invert":false, "style":"curved=0;endArrow=blockThin;endFill=1;"}
 # width: auto
 # height: auto
 # padding: 15
-# ignore: shape,fill,stroke,refs
+#
+## Shapes and their styles
+# stylename: shape_type
+# styles: {"block": "shape=process;html=1;rounded=1;fillColor=#E0EBFC;strokeColor=#6C8EBF;", \
+# "blockhub": "shape=process;html=1;rounded=1;fillColor=#B1CEFE;strokeColor=#6C8EBF;", \
+# "table": "shape=datastore;html=1;rounded=1;fillColor=#6AA9FF;strokeColor=#6C8EBF;"}
+#
+# ignore: shapeType,fill,stroke,refs
 # nodespacing: 40
 # levelspacing: 100
 # edgespacing: 40
-# layout: auto
+# layout: organic
+# forceConstant: 200
 ## CSV starts under this line

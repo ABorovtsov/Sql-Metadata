@@ -5,7 +5,7 @@ import pandas as pd
 
 class MetaExporter:
     ORDERED_COLUMNS = ['name','type','refs','reused','has_app_lock','has_tx','has_dynamic_sql',
-            'shape','fill','stroke','link']
+            'shape_type','link']
 
     def to_df(self, metas):
         df = pd.DataFrame([meta.as_json() for meta in metas])
@@ -32,9 +32,7 @@ class MetaExporter:
 
         df['refs'] = df.apply(lambda v: self.__indexer(df, v), axis=1)
         df['reused'] = df.name.apply(lambda v: v in list(dependencies.name))
-        df['shape'] = df.type.apply(lambda t: 'mxgraph.basic.rect' if 'SP' in t else 'cylinder3') 
-        df['fill'] = df.apply(lambda row: self.__get_fill_color(row['type'], row['reused']), axis=1)
-        df['stroke'] = '#6C8EBF'
+        df['shape_type'] = df.apply(lambda row: self.__get_shape_type(row['type'], row['reused']), axis=1) 
         df = df[MetaExporter.ORDERED_COLUMNS]
 
         df.to_csv(path)
@@ -78,13 +76,13 @@ class MetaExporter:
         dependencies_df = dependencies_df.append(dependencies_sps_df, sort=False)
         return dependencies_df
 
-    def __get_fill_color(self, resource_type, reused):
+    def __get_shape_type(self, resource_type, reused):
         if 'SP' in resource_type:
             if reused:
-                return '#B1CEFE' # reusable SP
-            return '#E0EBFC' # SP
+                return 'blockhub' # reusable SP
+            return 'block' # SP
 
-        return '#6AA9FF' # tables, etc
+        return 'table' # tables, etc
 
     def __get_unique(self, list_series):
         dependencies = []
