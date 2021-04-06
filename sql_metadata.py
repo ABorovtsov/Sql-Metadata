@@ -29,7 +29,8 @@ class SQLMetadata:
             'type': self.__get_type(),
             'tables': self.overrides.get('tables', self.__get_tables()),
             'sps': self.overrides.get('sps', self.__get_sps()),
-            'link': self.overrides.get('link', self.link_generator(self.sql_path))
+            'link': self.overrides.get('link', self.link_generator(self.sql_path)),
+            'path': self.sql_path
         }
 
     def __get_tables(self):

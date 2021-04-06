@@ -18,10 +18,14 @@ class MetaExporter:
         df = self.to_df(metas)
         df.to_csv(path)
 
-    def to_drawio(self, metas, path, exclude = ['sp_executesql', 'sp_getapplock'], chunk_size = None):
+    def to_drawio(self, metas, path, exclude = ['sp_executesql', 'sp_getapplock'], filter_mask = None, chunk_size = None):
         df = self.to_df(metas)
+        
+        if filter_mask:
+            df = df.loc[filter_mask(df)]
+
         dependencies = self.__get_dependencies(df, exclude, unique=False)
-        df = df.append(self.__get_dependencies(df, exclude, unique=True))
+        df = df.append(self.__get_dependencies(df, exclude, unique=True), sort=False)
         df.reset_index(drop=True, inplace=True)
         df.index.rename('idx', inplace=True)
         df = df.replace({np.nan: None})
@@ -37,8 +41,6 @@ class MetaExporter:
 
         if chunk_size:
             reusable_df = df.loc[df.reused]
-            # chunk_size = int(len(df.index) / partition_number)
-            
             part = 0
             for chunk in pd.read_csv(path,chunksize=chunk_size,dtype={'idx': int, 'refs': str}):
                 chunk.set_index('idx')
@@ -48,7 +50,7 @@ class MetaExporter:
                         chunk_refs.extend([int(ref) for ref in refs.split(',')])
 
                 reusable_df_part = reusable_df.loc[(reusable_df.index.isin(chunk_refs)) & (~reusable_df.index.isin(chunk.index))]
-                chunk = chunk.append(reusable_df_part)
+                chunk = chunk.append(reusable_df_part, sort=False)
                 chunk.index.rename('idx', inplace=True)
 
                 if chunk.shape[0] > 0:
@@ -73,14 +75,14 @@ class MetaExporter:
         dependencies_sps_df['name']=pd.Series(dependencies_sps)
         dependencies_sps_df.type = 'SP'
 
-        dependencies_df = dependencies_df.append(dependencies_sps_df)
+        dependencies_df = dependencies_df.append(dependencies_sps_df, sort=False)
         return dependencies_df
 
     def __get_fill_color(self, resource_type, reused):
         if 'SP' in resource_type:
             if reused:
                 return '#B1CEFE' # reusable SP
-            return '#DAE8FC' # SP
+            return '#E0EBFC' # SP
 
         return '#6AA9FF' # tables, etc
 
