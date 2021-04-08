@@ -4,9 +4,6 @@ import pandas as pd
 
 
 class MetaExporter:
-    ORDERED_COLUMNS = ['name','type','refs','reused','has_app_lock','has_tx','has_dynamic_sql',
-            'shape_type','link']
-
     def to_df(self, metas):
         df = pd.DataFrame([meta.as_json() for meta in metas])
         df.sort_values(by='name', inplace=True)
@@ -18,7 +15,7 @@ class MetaExporter:
         df = self.to_df(metas)
         df.to_csv(path)
 
-    def to_drawio(self, metas, path, exclude = ['sp_executesql', 'sp_getapplock'], filter_mask = None, chunk_size = None):
+    def to_drawio(self, metas, path, exclude = ['sp_executesql', 'sp_getapplock'], filter_mask = None, chunk_size = None, columns = None):
         df = self.to_df(metas)
         
         if filter_mask:
@@ -32,8 +29,9 @@ class MetaExporter:
 
         df['refs'] = df.apply(lambda v: self.__indexer(df, v), axis=1)
         df['reused'] = df.name.apply(lambda v: v in list(dependencies.name))
-        df['shape_type'] = df.apply(lambda row: self.__get_shape_type(row['type'], row['reused']), axis=1) 
-        df = df[MetaExporter.ORDERED_COLUMNS]
+        df['shape_type'] = df.apply(lambda row: self.__get_shape_type(row), axis=1) 
+        if columns:
+            df = df[columns]
 
         df.to_csv(path)
 
@@ -52,7 +50,10 @@ class MetaExporter:
                 chunk.index.rename('idx', inplace=True)
 
                 if chunk.shape[0] > 0:
-                    chunk[MetaExporter.ORDERED_COLUMNS].to_csv(path.replace('.csv', f'{part}.csv'))
+                    if columns:
+                        chunk = chunk[columns]
+
+                    chunk.to_csv(path.replace('.csv', f'{part}.csv'))
 
                 part += 1
 
@@ -76,8 +77,19 @@ class MetaExporter:
         dependencies_df = dependencies_df.append(dependencies_sps_df, sort=False)
         return dependencies_df
 
-    def __get_shape_type(self, resource_type, reused):
+    def __get_shape_type(self, row):
+        resource_type = row['type']
+        reused = row['reused']
+        status = row['status'] if 'status' in row else ''
+        task = row['task'] if 'task' in row else ''
+
         if 'SP' in resource_type:
+            if status and 'done' in status.lower():
+                return 'doneblock' # SP with a task done
+            if status and 'todo' in status.lower():
+                if task and 'jira' in task.lower():
+                    return 'blockwithtask' # SP with todo and a task
+                return 'todoblock' # SP with a todo
             if reused:
                 return 'blockhub' # reusable SP
             return 'block' # SP

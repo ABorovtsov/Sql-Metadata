@@ -20,18 +20,19 @@ class SQLMetadata:
         self.sql_path = sql_path
 
     def as_json(self):
-        return \
-        {
-            'name': self.name,
-            'has_app_lock': self.overrides.get('has_app_lock', self.__has_app_lock()), # todo: use overrides inside each class member
-            'has_tx': self.overrides.get('has_tx', self.__has_tx()),
-            'has_dynamic_sql': self.overrides.get('has_dynamic_sql', self.__has_dynamic_sql()),
-            'type': self.__get_type(),
-            'tables': self.overrides.get('tables', self.__get_tables()),
-            'sps': self.overrides.get('sps', self.__get_sps()),
-            'link': self.overrides.get('link', self.link_generator(self.sql_path)),
-            'path': self.sql_path
-        }
+        json = self.overrides
+
+        json['name'] = self.name
+        json['has_app_lock'] = self.overrides.get('has_app_lock', self.__has_app_lock()) # todo: use overrides inside each class member
+        json['has_tx'] = self.overrides.get('has_tx', self.__has_tx())
+        json['has_dynamic_sql'] = self.overrides.get('has_dynamic_sql', self.__has_dynamic_sql())
+        json['type'] = self.__get_type()
+        json['tables'] = self.overrides.get('tables', self.__get_tables())
+        json['sps'] = self.overrides.get('sps', self.__get_sps())
+        json['link'] = self.overrides.get('link', self.link_generator(self.sql_path))
+        json['path'] = self.sql_path
+
+        return json
 
     def __get_tables(self):
         pattern = r"(^from\s+|\s+from\s+|" + \
