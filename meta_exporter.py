@@ -1,6 +1,7 @@
 from textwrap import indent
 import numpy as np
 import pandas as pd
+import pathlib
 
 
 class MetaExporter:
@@ -15,14 +16,14 @@ class MetaExporter:
         df = self.to_df(metas)
         df.to_csv(path)
 
-    def to_drawio(self, metas, path, exclude = ['sp_executesql', 'sp_getapplock'], filter_mask = None, chunk_size = None, columns = None):
+    def to_drawio(self, metas, path, exclude_dependencies = ['sp_executesql', 'sp_getapplock'], filter_mask = None, chunk_size = None, columns = None):
         df = self.to_df(metas)
         
         if filter_mask:
             df = df.loc[filter_mask(df)]
 
-        dependencies = self.__get_dependencies(df, exclude, unique=False)
-        df = df.append(self.__get_dependencies(df, exclude, unique=True), sort=False)
+        dependencies = self.__get_dependencies(df, exclude_dependencies, unique=False)
+        df = df.append(self.__get_dependencies(df, exclude_dependencies, unique=True), sort=False)
         df.reset_index(drop=True, inplace=True)
         df.index.rename('idx', inplace=True)
         df = df.replace({np.nan: None})
@@ -33,6 +34,7 @@ class MetaExporter:
         if columns:
             df = df[columns]
 
+        output_files = [path]
         df.to_csv(path)
 
         if chunk_size:
@@ -53,9 +55,27 @@ class MetaExporter:
                     if columns:
                         chunk = chunk[columns]
 
-                    chunk.to_csv(path.replace('.csv', f'{part}.csv'))
+                    output_path = path.replace('.csv', f'{part}.csv')
+                    chunk.to_csv(output_path)
+                    output_files.append(output_path)
 
                 part += 1
+        
+        self.__add_drawio_header(output_files)
+
+    def __add_drawio_header(self, output_files):
+        header = ''
+        with open(pathlib.Path(__file__).parent.joinpath('drawio_header.tpl').absolute(), 'r') as file:
+            header = file.read()
+
+        for output_file in output_files:
+            content = ''
+            with open(output_file, 'r') as file:
+                content = file.read()
+
+            with open(output_file, 'w') as file:
+                file.write(header + content)
+
 
     def __get_dependencies(self, df, exclude, unique = True):
         dependencies_df = pd.DataFrame(columns=df.columns)
