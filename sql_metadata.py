@@ -29,7 +29,7 @@ class SQLMetadata:
         json['type'] = self.__get_type()
         json['tables'] = self.overrides.get('tables', self.__get_tables())
         json['sps'] = self.overrides.get('sps', self.__get_sps())
-        json['link'] = self.overrides.get('link', self.link_generator(self.sql_path))
+        json['link'] = self.overrides.get('link', self.link_generator.get(self.sql_path))
         json['path'] = self.sql_path
 
         return json

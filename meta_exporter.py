@@ -5,6 +5,9 @@ import pathlib
 
 
 class MetaExporter:
+    def __init__(self, link_generator = None):
+        self.link_gen = link_generator
+
     def to_df(self, metas):
         df = pd.DataFrame([meta.as_json() for meta in metas])
         df.sort_values(by='name', inplace=True)
@@ -83,6 +86,8 @@ class MetaExporter:
         dependencies_tables = list(filter(lambda x: x not in exclude, dependencies_tables))
         dependencies_df['name']=pd.Series(dependencies_tables)
         dependencies_df.type = 'Table'
+        if self.link_gen:
+            dependencies_df.link = dependencies_df.name.apply(self.link_gen.get_table_link)
 
         dependencies_sps = self.__get_unique(df.sps)
         dependencies_sps = list(filter(lambda x: x not in exclude, dependencies_sps))
